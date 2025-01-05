@@ -14,24 +14,19 @@ mongoose.connect(DB_URL, {
   console.log('Connected');
 })
 
-const tourSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    reqired: [true, 'A tour must have a name']
-  }, 
-  rating: {
-    type: Number,
-    min: 1,
-    max: 5,
-    default: 4.5
-  },
-  price: {
-    type: Number,
-    required: [true, 'A tour must have a price']
-  }
-});
 
-const Tour = mongoose.model('Tour', tourSchema);
+
+// creating a document out of model
+// so this document var will have some method to interact with db
+// const newTour = new Tour({
+//   name: 'Mountain Climbing',
+//   rating: 5,
+//   price: 199.99
+// });
+
+// newTour.save().then((doc) => {
+//   console.log('New tour saved:', doc)
+// });
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
