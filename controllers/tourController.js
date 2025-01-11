@@ -1,5 +1,5 @@
 const fs = require('fs');
-const Tour = require('./models/tourModel')
+const Tour = require('../models/tourModel')
 
 const tours = JSON.parse(
   fs.readFileSync(`${__dirname}/../dev-data/data/tours-simple.json`)
@@ -29,9 +29,48 @@ exports.checkBody = (req, res, next) => {
 };
 
 exports.getAllTours = async (req, res) => {
+
+  // 1) Filtering tquery
+  const queryObject = {...req.query};
+  const excludedParams = ['page', 'sort', 'limit', 'fields'];
+  excludedParams.forEach(param => delete queryObject[param]);
+
+  // 2) Advance filtering
+  let queryString = JSON.stringify(queryObject);
+  // add $ so that it cats as an mongo db operator
+  // /tours?difficulty=medium&duration[gte]=9 -- this will be the url
+  queryString = queryString.replace(/\b(gt|gte|lt|lte)\b/g, match => `$${match}`);
+
   
+
   try {
-    const tours = await Tour.find();
+    // create query object
+    let query = Tour.find(JSON.parse(queryString));  // find method here returns query object.
+
+    // OR
+
+    // const tours = await Tour.find().where('difficulty').equals('medium');
+
+    // 3) Sorting the data
+    // endpoint - ......sort=price,ratingsQuantity
+  if (req.query.sort) {
+        const sortBy = req.query.sort.split(',').join(' ');
+        query = query.sort(sortBy);
+    } else {
+    query = query.sort('-createdAt');
+    }
+
+    // Limiting the fields -- PROJECTION
+    if(req.query.fields) {
+      const fields = req.query.fields.split(',').map(field => field.trim());
+      query = query.select(fields);
+    } else {
+      query = query.select('-__v');
+    }
+
+    // execute query 
+    const tours = await query;
+
     res.status(200).json({
       status: 'success',
       results: tours.length,
