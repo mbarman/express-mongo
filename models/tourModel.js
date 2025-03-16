@@ -1,4 +1,6 @@
 const mongoose = require('mongoose');
+const slugify = require('slugify');
+const validator = require('validator');
 
 // definig the schema
 // const tourSchema = new mongoose.Schema({
@@ -101,7 +103,49 @@ const tourSchema = new mongoose.Schema(
     toObject: { virtuals: true }
   }
 );
+
+// create virtual properties which is part of schema but not persisted
+tourSchema.virtual('durationWeeks').get(function () {
+  return this.duration / 7;
+})
+
+// monggose document middewares
+
+// pre middleware, runs before save and cretae monggosen methods
+tourSchema.pre('save', function(next) {
+  this.slug = slugify(this.name, { lower: true });
+  next();
+})
   
+// post middleware, runs after doc saved
+tourSchema.post('save', function(doc, next) {
+  console.log(`New tour created: ${doc.name}`);
+  next();
+})
+
+
+// QUERY MIDDLEWARES
+
+tourSchema.pre(/^find/, function(next) {
+  this.find({ secretTour: {$ne: true} });
+  this.start = Date.now();
+  next();
+})
+
+
+tourSchema.post(/^find/, function(docs, next) {
+  console.log(`Query took ${Date.now() - this.start} miliseconds`);
+  next();
+})
+
+
+// AGGREGATION MIDDLEWARE
+
+tourSchema.pre('aggregate', function(next) {
+  this.pipeline().unshift({ $match: { secretTour: false } });
+  next();
+})
+
   // creating model out of the schema
   const Tour = mongoose.model('Tour', tourSchema);
 

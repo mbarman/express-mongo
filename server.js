@@ -1,20 +1,29 @@
-const mongoose = require('mongoose');
-const dotenv = require('dotenv');
-const app = require('./app');
+const mongoose = require("mongoose");
+const dotenv = require("dotenv");
+const app = require("./app");
 
-dotenv.config({ path: './config.env' });
+process.on("uncaughtException", (err) => {
+  console.log("UNHANDLED EXCEPTION Shutting down!!");
+  console.log(err);
+  process.exit(1);
+});
 
-const DB_URL = process.env.DATABASE_URL.replace('<PASSWORD>', process.env.DATABASE_PASSWORD);
+dotenv.config({ path: "./config.env" });
 
-mongoose.connect(DB_URL, {
-  useNewUrlParser: true,
-  useCreateIndex: true,
-  useFindAndModify: false,
-}).then((con) => {
-  console.log('Connected');
-})
+const DB_URL = process.env.DATABASE_URL.replace(
+  "<PASSWORD>",
+  process.env.DATABASE_PASSWORD
+);
 
-
+mongoose
+  .connect(DB_URL, {
+    useNewUrlParser: true,
+    useCreateIndex: true,
+    useFindAndModify: false,
+  })
+  .then((con) => {
+    console.log("Connected");
+  });
 
 // creating a document out of model
 // so this document var will have some method to interact with db
@@ -29,6 +38,17 @@ mongoose.connect(DB_URL, {
 // });
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`App running on port ${port}...`);
 });
+
+// generic event handler for all kind of promise rejection
+process.on("unhandledRejection", (err) => {
+  console.log("UNHANDLED REJECTION Shutting down!!");
+  console.log(err);
+  server.close(() => {
+    process.exit(1);
+  });
+});
+
+console.log(x);
